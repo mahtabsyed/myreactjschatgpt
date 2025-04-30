@@ -5,8 +5,9 @@ import './App.css';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const AVAILABLE_MODELS = [
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
+  { id: 'o3', name: 'GPT-o3' },
   { id: 'gpt-4', name: 'GPT-4' },
+  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
 ];
 
 export default function App() {
@@ -94,7 +95,12 @@ export default function App() {
             ))}
           </select>
         </div>
-        {messages.length === 0 && <h1 className="gpt4o-title">What can I help with?</h1>}
+        {messages.length === 0 && (
+          <>
+            <h1 className="gpt4o-app-title">my ReactJS ChatGPT</h1>
+            <h1 className="gpt4o-title">What can I help with?</h1>
+          </>
+        )}
         <div className="gpt4o-chat-area">
           {messages.length === 0 && (
             <div className="gpt4o-chat-placeholder">Your conversation will appear here.</div>
@@ -122,6 +128,7 @@ export default function App() {
           <button className="gpt4o-send-btn" title="Send" disabled={!input.trim() || loading} type="submit">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
+          <div className="gpt4o-model-indicator">Using model: {AVAILABLE_MODELS.find(m => m.id === selectedModel)?.name}</div>
         </form>
         {loading && <div className="gpt4o-loading">Thinking…</div>}
         {error && <div className="gpt4o-error">{error}</div>}

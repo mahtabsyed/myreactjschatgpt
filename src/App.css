@@ -341,3 +341,32 @@ body, html, #root, .gpt4o-root {
   margin: 0.5em 0;
   line-height: 1.2;
 }
+
+.gpt4o-model-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 32px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+@media (max-width: 700px) {
+  .gpt4o-model-indicator {
+    left: 8px;
+  }
+}
+
+.gpt4o-app-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #666;
+  letter-spacing: -0.5px;
+}
+
+@media (max-width: 700px) {
+  .gpt4o-app-title {
+    font-size: 1.35rem;
+  }
+}
