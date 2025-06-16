@@ -3,7 +3,6 @@
 Built from scratch using Cursor
 Uses ChatGPT APIs
 
-
 ## Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -35,3 +34,36 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
+---
+
+## Python Chat Router
+
+A small Python script (`chat_router.py`) is included to route prompts to different OpenAI models and optionally use Google search. The workflow is:
+
+1. Classify the user prompt using **gpt-4o** into one of `simple`, `reasoning` or `internet_search`.
+2. Depending on the classification:
+   - `simple` &rarr; call **gpt-4o-mini**.
+   - `reasoning` &rarr; call **o4-mini**.
+   - `internet_search` &rarr; perform a Google Custom Search and feed the results to **gpt-4o**.
+
+### Prerequisites
+
+- Python 3.8+
+- `openai`, `requests` and `python-dotenv` packages (`pip install -r requirements.txt`)
+- `.env` file with the following keys:
+
+```
+OPENAI_API_KEY=your_openai_key
+GOOGLE_API_KEY=your_google_api_key
+GOOGLE_CSE_ID=your_custom_search_engine_id
+```
+
+(See `.env.example` for a template.)
+
+### Running
+
+```bash
+python chat_router.py
+```
+
+You will be prompted for input and the script will print the response based on the routing rules described above.
