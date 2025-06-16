@@ -67,3 +67,18 @@ python chat_router.py
 ```
 
 You will be prompted for input and the script will print the response based on the routing rules described above.
+
+### Frontend prompt classification
+
+The React app mirrors this logic. When you send a message it first classifies
+the prompt using **gpt-4o** and then chooses one of the models above. The
+classification (simple, reasoning or internet_search) is shown next to the model
+indicator at the bottom of the chat window.
+
+The frontend expects these keys in your `.env` file (see `.env.example`):
+
+```
+REACT_APP_OPENAI_API_KEY=your_openai_key
+REACT_APP_GOOGLE_API_KEY=your_google_api_key
+REACT_APP_GOOGLE_CSE_ID=your_custom_search_engine_id
+```
