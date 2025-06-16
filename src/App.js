@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const GOOGLE_SEARCH_URL = 'https://www.googleapis.com/customsearch/v1';
 const AVAILABLE_MODELS = [
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
   { id: 'o3', name: 'GPT-o3' },
@@ -16,7 +17,49 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
+  const [method, setMethod] = useState(null); // simple | reasoning | internet_search
   const messagesEndRef = useRef(null);
+
+  const classifyPrompt = async (prompt) => {
+    const messages = [
+      {
+        role: 'system',
+        content:
+          'You are a classification assistant. Respond ONLY with JSON like {"type":"simple"}. Types: simple, reasoning, internet_search.',
+      },
+      { role: 'user', content: prompt },
+    ];
+    const res = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({ model: 'gpt-4o', messages, temperature: 0 }),
+    });
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content?.trim();
+    try {
+      const obj = JSON.parse(content);
+      return obj.type;
+    } catch {
+      return 'simple';
+    }
+  };
+
+  const googleSearch = async (query) => {
+    const params = new URLSearchParams({
+      key: process.env.REACT_APP_GOOGLE_API_KEY,
+      cx: process.env.REACT_APP_GOOGLE_CSE_ID,
+      q: query,
+      num: '3',
+    });
+    const res = await fetch(`${GOOGLE_SEARCH_URL}?${params.toString()}`);
+    const data = await res.json();
+    return (
+      data.items?.map((item) => `${item.title}\n${item.link}\n${item.snippet}`) || []
+    );
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -27,28 +70,42 @@ export default function App() {
     setInput('');
     setLoading(true);
     try {
-      console.log('API Key:', process.env.REACT_APP_OPENAI_API_KEY ? 'Present' : 'Missing');
-      console.log('Selected Model:', selectedModel);
-      console.log('Sending request to OpenAI...');
-      
-      const formattedMessages = [
-        {
-          role: 'system',
-          content: 'Please format your responses using Markdown syntax for better readability. Use:\n- Paragraphs with line breaks\n- Bullet points for lists\n- Headers for sections\n- Code blocks when sharing code\n- Bold or italic for emphasis'
-        },
-        ...newMessages
-      ];
-      
+      const kind = await classifyPrompt(input);
+      setMethod(kind);
+      const baseSystem = {
+        role: 'system',
+        content:
+          'Please format your responses using Markdown syntax for better readability. Use:\n- Paragraphs with line breaks\n- Bullet points for lists\n- Headers for sections\n- Code blocks when sharing code\n- Bold or italic for emphasis',
+      };
+      let model = 'gpt-4o-mini';
+      let body;
+      if (kind === 'simple') {
+        model = 'gpt-4o-mini';
+        body = { model, messages: [baseSystem, ...newMessages] };
+      } else if (kind === 'reasoning') {
+        model = 'o4-mini';
+        body = { model, messages: [baseSystem, ...newMessages] };
+      } else {
+        model = 'gpt-4o';
+        const results = await googleSearch(input);
+        const formatted = results.join('\n\n');
+        body = {
+          model,
+          messages: [
+            { role: 'system', content: 'Use the following Google search results to answer the question.' },
+            { role: 'user', content: `Search results:\n${formatted}\n\nQuestion: ${input}` },
+          ],
+        };
+      }
+      setSelectedModel(model);
+
       const res = await fetch(OPENAI_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
+          Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
         },
-        body: JSON.stringify({
-          model: selectedModel,
-          messages: formattedMessages,
-        }),
+        body: JSON.stringify(body),
       });
       
       console.log('Response status:', res.status);
@@ -128,7 +185,7 @@ export default function App() {
           <button className="gpt4o-send-btn" title="Send" disabled={!input.trim() || loading} type="submit">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
-          <div className="gpt4o-model-indicator">Using model: {AVAILABLE_MODELS.find(m => m.id === selectedModel)?.name}</div>
+          <div className="gpt4o-model-indicator">Using model: {AVAILABLE_MODELS.find(m => m.id === selectedModel)?.name}{method ? ` – ${method}` : ''}</div>
         </form>
         {loading && <div className="gpt4o-loading">Thinking…</div>}
         {error && <div className="gpt4o-error">{error}</div>}
